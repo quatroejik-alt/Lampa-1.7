@@ -1,29 +1,25 @@
 (function() {
     'use strict';
 
-    console.log('UA Kino Plugin v1.7 — для LAMPA 1.12.4');
+    console.log('UA Kino Plugin v1.8 — спеціально для LAMPA 1.12.4');
 
     const PLUGIN_NAME = 'UA Кіно';
-    const PLUGIN_VERSION = '1.7';
+    const PLUGIN_VERSION = '1.8';
 
     function startPlugin() {
         if (window.ua_kino_plugin) return;
         window.ua_kino_plugin = true;
 
-        try {
-            Lampa.Component.add('ua_kino_main', uaKinoMain);
+        Lampa.Component.add('ua_kino_main', uaKinoMain);
 
-            Lampa.Listener.follow('app', function(e) {
-                if (e.type === 'ready') {
-                    addToMenu();
-                    console.log('✅ Плагін успішно завантажено');
-                }
-            });
+        Lampa.Listener.follow('app', function(e) {
+            if (e.type === 'ready') {
+                addToMenu();
+                console.log('✅ Плагін v1.8 завантажено');
+            }
+        });
 
-            addWatchOnlineButton();
-        } catch (e) {
-            console.log('Помилка запуску:', e);
-        }
+        addPowerfulWatchButton();
     }
 
     function addToMenu() {
@@ -41,7 +37,8 @@
 
     function uaKinoMain(object) {
         let container = $('<div class="layer"></div>');
-        let searchInput = $(`<input type="text" placeholder="Пошук фільмів, серіалів, аніме..." style="width:100%; padding:16px; margin:15px 0; border-radius:12px; font-size:17px;">`);
+        let searchInput = $(`<input type="text" placeholder="Пошук фільмів, серіалів, аніме..." 
+            style="width:100%; padding:16px; margin:15px 0; border-radius:12px; font-size:17px;">`);
         let results = $('<div class="ua-results"></div>');
 
         searchInput.on('keydown', function(e) {
@@ -82,37 +79,79 @@
                     }
                 });
             });
-        }, 600);
+        }, 500);
     }
 
-    function addWatchOnlineButton() {
-        setInterval(() => {
-            try {
-                const activity = Lampa.Activity.active();
-                if (!activity || activity.name !== 'full') return;
+    // === НАЙНАДІЙНІШИЙ СПОСІБ ДЛЯ 1.12.4 ===
+    function addPowerfulWatchButton() {
+        const observer = new MutationObserver(() => {
+            tryAddButton();
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
 
-                const card = activity.card;
-                if (!card || !card.url) return;
-
-                $('.full__button--watch-online').remove();
-
-                const button = $(`
-                    <div class="full__button full__button--watch-online" 
-                         style="background:#e50914;color:#fff;font-size:18px;font-weight:bold;text-align:center;padding:18px 0;margin:12px 0;border-radius:8px;">
-                        ▶ Дивитись онлайн
-                    </div>
-                `);
-
-                button.on('click', function() {
-                    Lampa.Player.play({ title: card.title, url: card.url });
-                });
-
-                $('.full__buttons, .activity__body').prepend(button);
-            } catch(e) {}
-        }, 1300);
+        setInterval(tryAddButton, 1000);
     }
 
+    function tryAddButton() {
+        try {
+            const activity = Lampa.Activity.active();
+            if (!activity || activity.name !== 'full') return;
+
+            const card = activity.card;
+            if (!card || !card.url) return;
+
+            // Видаляємо попередні спроби
+            $('.full__button--watch-online, .button-watch-online').remove();
+
+            const button = $(`
+                <div class="full__button full__button--watch-online button-watch-online" 
+                     style="background:#e50914 !important; color:#fff !important; font-size:19px; 
+                            font-weight:bold; text-align:center; padding:18px 0; margin:15px 0 10px 0; 
+                            border-radius:8px; box-shadow: 0 0 15px rgba(229, 9, 20, 0.6);">
+                    ▶ Дивитись онлайн
+                </div>
+            `);
+
+            button.on('click', function() {
+                if (card.url) {
+                    Lampa.Player.play({
+                        title: card.title || 'Фільм',
+                        url: card.url
+                    });
+                }
+            });
+
+            // Пробуємо всі можливі контейнери для LAMPA 1.12.x
+            const containers = [
+                '.full__buttons', 
+                '.full-card__buttons', 
+                '.card__actions', 
+                '.activity__body', 
+                '.full__info',
+                '.content'
+            ];
+
+            for (let sel of containers) {
+                let el = $(sel);
+                if (el.length > 0) {
+                    el.prepend(button);
+                    console.log('Кнопка додана в: ' + sel);
+                    return;
+                }
+            }
+
+            // Якщо нічого не знайшли
+            $('body .activity').prepend(button);
+
+        } catch (e) {
+            console.log('tryAddButton error:', e);
+        }
+    }
+
+    // Автозапуск
     if (window.appready) startPlugin();
-    else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') startPlugin(); });
+    else Lampa.Listener.follow('app', (e) => {
+        if (e.type === 'ready') startPlugin();
+    });
 
 })();
