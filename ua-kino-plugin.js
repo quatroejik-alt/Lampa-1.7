@@ -1,61 +1,47 @@
 (function() {
     'use strict';
 
-    console.log('UA Kino Plugin v1.7 — виправлено Script error');
+    console.log('UA Kino Plugin v1.7 — для LAMPA 1.12.4');
 
     const PLUGIN_NAME = 'UA Кіно';
     const PLUGIN_VERSION = '1.7';
 
     function startPlugin() {
+        if (window.ua_kino_plugin) return;
+        window.ua_kino_plugin = true;
+
         try {
-            if (window.ua_kino_plugin) return;
-            window.ua_kino_plugin = true;
-
-            // Перевіряємо, чи є основні об'єкти LAMPA
-            if (typeof Lampa === 'undefined') {
-                console.log('❌ Lampa не знайдено');
-                return;
-            }
-
             Lampa.Component.add('ua_kino_main', uaKinoMain);
 
             Lampa.Listener.follow('app', function(e) {
                 if (e.type === 'ready') {
                     addToMenu();
-                    console.log('✅ Плагін v1.7 успішно запущено');
+                    console.log('✅ Плагін успішно завантажено');
                 }
             });
 
             addWatchOnlineButton();
-
         } catch (e) {
-            console.log('❌ Помилка в плагіні:', e);
+            console.log('Помилка запуску:', e);
         }
     }
 
     function addToMenu() {
-        try {
-            Lampa.Catalog.add({
-                title: PLUGIN_NAME,
-                icon: '📺',
-                onMore: function() {
-                    Lampa.Activity.push({
-                        component: 'ua_kino_main',
-                        title: PLUGIN_NAME
-                    });
-                }
-            });
-        } catch (e) {}
+        Lampa.Catalog.add({
+            title: PLUGIN_NAME,
+            icon: '📺',
+            onMore: function() {
+                Lampa.Activity.push({
+                    component: 'ua_kino_main',
+                    title: PLUGIN_NAME
+                });
+            }
+        });
     }
 
     function uaKinoMain(object) {
         let container = $('<div class="layer"></div>');
-        
-        let searchInput = $(`
-            <input type="text" placeholder="Пошук фільмів, серіалів, аніме..." 
-                   style="width:100%; padding:16px; margin:15px 0; border-radius:12px; font-size:17px;">
-        `);
-
+        let searchInput = $(`<input type="text" placeholder="Пошук фільмів, серіалів, аніме..." style="width:100%; padding:16px; margin:15px 0; border-radius:12px; font-size:17px;">`);
         let results = $('<div class="ua-results"></div>');
 
         searchInput.on('keydown', function(e) {
@@ -91,12 +77,12 @@
                     card: {
                         title: $(this).data('title'),
                         poster: $(this).data('poster'),
-                        overview: 'Українська озвучка • Онлайн',
+                        overview: 'Українська озвучка • Онлайн перегляд',
                         url: $(this).data('url')
                     }
                 });
             });
-        }, 500);
+        }, 600);
     }
 
     function addWatchOnlineButton() {
@@ -118,23 +104,15 @@
                 `);
 
                 button.on('click', function() {
-                    Lampa.Player.play({
-                        title: card.title || 'Фільм',
-                        url: card.url
-                    });
+                    Lampa.Player.play({ title: card.title, url: card.url });
                 });
 
-                $('.full__buttons, .full-card__buttons, .activity__body').prepend(button);
-            } catch (e) {}
-        }, 1500);
+                $('.full__buttons, .activity__body').prepend(button);
+            } catch(e) {}
+        }, 1300);
     }
 
-    // Автозапуск
     if (window.appready) startPlugin();
-    else {
-        Lampa.Listener.follow('app', function(e) {
-            if (e.type === 'ready') startPlugin();
-        });
-    }
+    else Lampa.Listener.follow('app', (e) => { if (e.type === 'ready') startPlugin(); });
 
 })();
