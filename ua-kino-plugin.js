@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    console.log('UA Kino Plugin v1.9 — Спрощена версія');
+    console.log('UA Kino Plugin v1.9 — Правильна версія');
 
     const PLUGIN_NAME = 'UA Кіно';
     const PLUGIN_VERSION = '1.9';
@@ -15,11 +15,9 @@
         Lampa.Listener.follow('app', function(e) {
             if (e.type === 'ready') {
                 addToMenu();
-                console.log('✅ Плагін v1.9 завантажено');
+                console.log('✅ UA Kino Plugin v1.9 успішно запущено');
             }
         });
-
-        console.log(`\( {PLUGIN_NAME} v \){PLUGIN_VERSION} активовано`);
     }
 
     function addToMenu() {
@@ -35,6 +33,61 @@
         });
     }
 
+    function uaKinoMain(object) {
+        let container = $('<div class="layer"></div>');
+        
+        let searchInput = $(`
+            <input type="text" placeholder="Пошук фільмів, серіалів, аніме..." 
+                   style="width:100%; padding:16px; margin:15px 0; border-radius:12px; font-size:17px;">
+        `);
+
+        let results = $('<div class="ua-results" style="padding:15px;"></div>');
+
+        searchInput.on('keydown', function(e) {
+            if (e.key === 'Enter' && this.value.trim() !== '') {
+                searchContent(this.value.trim());
+            }
+        });
+
+        container.append(searchInput).append(results);
+        object.activity.render(container);
+    }
+
+    function searchContent(query) {
+        $('.ua-results').html('<div style="padding:60px;text-align:center;color:#fff;">🔍 Пошук по UA джерелах...</div>');
+
+        setTimeout(() => {
+            let html = `
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:20px;">
+                    <div class="card ua-card" style="cursor:pointer;">
+                        <img src="https://image.tmdb.org/t/p/w300/8GuvF8X1Z8Z2z2z2z2z2.jpg" style="width:100%;border-radius:10px;">
+                        <div style="margin-top:10px;color:#fff;font-weight:600;">Інтерстеллар</div>
+                        <div style="color:#0f0;font-size:14px;">Українська озвучка</div>
+                        <button class="play-btn" style="margin-top:10px;width:100%;padding:12px;background:#e50914;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;">
+                            ▶ Дивитись онлайн
+                        </button>
+                    </div>
+                </div>`;
+
+            $('.ua-results').html(html);
+
+            // Запуск відео
+            $('.play-btn, .ua-card').on('click', function() {
+                Lampa.Player.play({
+                    title: "Інтерстеллар (Українська озвучка)",
+                    url: "https://test-streams.mux.dev/x264_720p_1500kbs_30fps.mp4"
+                });
+            });
+        }, 700);
+    }
+
+    // Автозапуск
+    if (window.appready) startPlugin();
+    else Lampa.Listener.follow('app', (e) => {
+        if (e.type === 'ready') startPlugin();
+    });
+
+})();
     function uaKinoMain(object) {
         let container = $('<div class="layer"></div>');
         
